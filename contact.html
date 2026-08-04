@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact us | SwitzerHealth</title>
+<meta name="description" content="Call, email, or send a message. We are happy to answer questions before you sign up for anything.">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="icon" href="/assets/logo-mark.svg" type="image/svg+xml">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a class="wordmark" href="/">
+      <svg class="wordmark__mark" style="color: var(--swh-red)" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
+        <g fill="none" stroke="currentColor" stroke-width="22">
+          <path d="M 306 89 L 150 89 A 60 60 0 0 0 90 149 L 90 176"/>
+          <path d="M 90 199 L 158 199 L 188 112 L 220 286 L 246 199 L 306 199"/>
+          <path d="M 90 311 L 246 311 A 60 60 0 0 0 306 251 L 306 224"/>
+        </g>
+      </svg>
+      <span><span class="wordmark__switzer">Switzer</span><span class="wordmark__health">Health</span></span>
+    </a>
+    <div class="site-header__contact">
+      <a href="tel:+18015550142">Call (801) 555-0142</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="section section--plain" style="padding-top: var(--sp-6)">
+    <div class="container container--narrow">
+      <h1>We are here to answer questions</h1>
+      <p class="lede">
+        You do not have to sign up for anything to talk to us. If you want to understand
+        how this works before you decide, that is exactly what we are here for.
+      </p>
+
+      <div class="panel" style="margin-block: var(--sp-5)">
+        <h2 style="font-size: var(--fs-lg)">Reach us directly</h2>
+        <p style="font-size: var(--fs-md)">
+          <strong>Phone:</strong> <a href="tel:+18015550142">(801) 555-0142</a><br>
+          Monday to Friday, 8:00&nbsp;a.m. to 5:00&nbsp;p.m. Mountain Time
+        </p>
+        <p style="font-size: var(--fs-md); margin-bottom: 0">
+          <strong>Email:</strong> <a href="mailto:hello@switzerhealth.com">hello@switzerhealth.com</a>
+        </p>
+      </div>
+
+      <h2>Or send us a message</h2>
+      <p>
+        Fill in whichever parts you like. We reply within two business days.
+      </p>
+
+      <form name="contact-message" method="POST" action="/thanks.html"
+            data-netlify="true" data-netlify-honeypot="bot-field">
+        <input type="hidden" name="form-name" value="contact-message">
+        <p class="sr-only">
+          <label>Leave this field empty: <input name="bot-field"></label>
+        </p>
+
+        <div class="field">
+          <label class="field__label" for="c-name">Your name</label>
+          <input type="text" id="c-name" name="name" autocomplete="name" required>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="c-email">Email address</label>
+          <span class="field__hint">Give us an email address or a phone number — either one is enough.</span>
+          <input type="email" id="c-email" name="email" autocomplete="email" inputmode="email">
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="c-phone">Phone number</label>
+          <input type="tel" id="c-phone" name="phone" autocomplete="tel" inputmode="tel">
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="c-message">What would you like to ask?</label>
+          <textarea id="c-message" name="message" rows="6"></textarea>
+        </div>
+
+        <label class="consent" for="c-optin">
+          <input type="checkbox" id="c-optin" name="contact_optin" value="yes">
+          <span>Yes, SwitzerHealth may call or text me back.</span>
+        </label>
+
+        <p class="field__hint" style="max-width: var(--measure)">
+          Please do not include medical details in this message. We will ask about your
+          health on the phone, where it is handled properly.
+        </p>
+
+        <button type="submit" class="btn btn--primary btn--lg btn--block">Send message</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p class="disclaimer">
+      <strong>This service does not replace emergency care. In an emergency, call 911.</strong>
+    </p>
+    <p class="disclaimer">
+      Reimbursement depends on valid physician orders, qualifying diagnoses, and
+      individualized patient assessment. Not all patients qualify. Care management codes
+      are mutually exclusive. Coverage varies by payer mix and setting.
+    </p>
+    <p class="disclaimer">
+      <a href="/">Home</a> &middot;
+      <a href="/flow.html">See if you qualify</a> &middot;
+      <a href="/privacy.html">Privacy notice</a>
+    </p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,59 @@
+# SwitzerHealth signup site — Netlify configuration
+#
+# There is no build step. The repository root IS the deployable site.
+
+[build]
+  publish = "."
+  command = ""
+
+# --- Security headers --------------------------------------------------------
+# The CSP is deliberately strict: this site loads no third-party scripts, fonts,
+# frames, or images, so there is nothing to allow. `style-src` permits inline
+# styles because a handful of one-off layout values are set with the `style`
+# attribute; everything else is 'self' only.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), interest-cohort=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+# Pages that can contain a person's answers or confirmation should never be
+# indexed, even though they are not linked from anywhere public.
+[[headers]]
+  for = "/flow.html"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/thanks.html"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+# --- Friendly URLs -----------------------------------------------------------
+[[redirects]]
+  from = "/qualify"
+  to = "/flow.html"
+  status = 301
+
+[[redirects]]
+  from = "/signup"
+  to = "/flow.html"
+  status = 301
+
+[[redirects]]
+  from = "/contact"
+  to = "/contact.html"
+  status = 301
+
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy.html"
+  status = 301

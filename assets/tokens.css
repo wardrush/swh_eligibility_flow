@@ -1,0 +1,107 @@
+/* ============================================================================
+   SwitzerHealth — Brand Tokens
+   Source: SwitzerHealth Brand Positioning System, Phase One (Marketing Dept.)
+
+   THIS IS THE ONE FILE TO EDIT FOR STYLING. Every color, size, and spacing
+   value in the site resolves back to a variable declared here.
+   ========================================================================= */
+
+:root {
+  /* --- Brand palette (§1 Brand Visual Identity) --------------------------- */
+  --swh-red: #d52b1e;        /* Swiss flag red, Pantone 485C. "Health", CTAs, accents */
+  --swh-charcoal: #2d2d2d;   /* Body text, headings, "Switzer" in the wordmark */
+  --swh-navy: #1b2a4a;       /* Hero backgrounds, section accents, dark UI surfaces */
+  --swh-white: #ffffff;      /* Backgrounds, reversed text on dark surfaces */
+
+  /* Derived neutrals. Kept dark enough to hold AAA contrast on white —
+     do not lighten these without re-checking with a contrast tool. */
+  --swh-ink: var(--swh-charcoal);
+  --swh-ink-soft: #4a4a4a;   /* 8.9:1 on white — still AAA for body copy */
+  --swh-rule: #c8ccd4;       /* Hairlines and card borders (non-text, 3:1 UI) */
+  --swh-rule-strong: #8a9099;
+  --swh-surface: #f4f5f7;    /* Section banding, selected-card wash */
+  --swh-surface-warm: #fdf3f2; /* Faint red wash for the selected state */
+  --swh-red-dark: #a81f16;   /* Hover/active on red. 7.0:1 white-on-this */
+  --swh-navy-soft: #24365c;
+
+  /* Semantic status colors. Chosen to hold >= 4.5:1 on white and to stay
+     distinguishable without relying on hue alone (icons + text carry meaning). */
+  --swh-go: #1c6b3f;
+  --swh-go-wash: #eef6f1;
+  --swh-review: #8a5a00;
+  --swh-review-wash: #fdf5e6;
+
+  /* --- Typography (§1: Helvetica preferred, Arial fallback) ---------------
+     No webfont. Nothing to download, nothing to block first paint, and the
+     brand's specified face is already present on virtually every device. */
+  --font-sans: Helvetica, "Helvetica Neue", Arial, "Liberation Sans", sans-serif;
+
+  /* Type scale. Base is 1rem = 20px (html is set to 125% below, which scales
+     from the reader's own browser setting rather than overriding it). */
+  --fs-sm: 0.9rem;    /* 18px — the floor. Nothing on this site goes smaller. */
+  --fs-base: 1rem;    /* 20px */
+  --fs-md: 1.15rem;   /* 23px */
+  --fs-lg: 1.4rem;    /* 28px */
+  --fs-xl: 1.75rem;   /* 35px */
+  --fs-2xl: 2.25rem;  /* 45px */
+  --fs-3xl: 2.9rem;   /* 58px */
+
+  --lh-tight: 1.15;
+  --lh-snug: 1.3;
+  --lh-body: 1.6;     /* Generous leading — meaningfully easier for aging eyes */
+
+  --fw-normal: 400;
+  --fw-bold: 700;
+
+  /* --- Spacing. 8px grid, per the Swiss grid discipline. ------------------ */
+  --sp-1: 0.4rem;
+  --sp-2: 0.8rem;
+  --sp-3: 1.2rem;
+  --sp-4: 1.6rem;
+  --sp-5: 2.4rem;
+  --sp-6: 3.2rem;
+  --sp-7: 4.8rem;
+  --sp-8: 6.4rem;
+
+  /* --- Layout ------------------------------------------------------------ */
+  --measure: 34rem;          /* ~65 characters. Line-length limit for body copy. */
+  --container: 64rem;
+  --container-narrow: 44rem;
+
+  /* --- Controls ----------------------------------------------------------
+     60px minimum tap target. This is the single most important number in the
+     file for the intended audience and must not be reduced. */
+  --tap-min: 3.6rem;
+  --radius: 4px;             /* Swiss style is squared-off; keep this restrained. */
+  --focus-width: 4px;
+
+  --shadow-card: 0 1px 2px rgba(27, 42, 74, 0.08);
+  --shadow-lift: 0 4px 12px rgba(27, 42, 74, 0.14);
+
+  --transition: 120ms ease-out;
+}
+
+/* 125% of the reader's own base size. A reader who has already set their
+   browser to large text gets large text scaled up again, which is the point. */
+html {
+  font-size: 125%;
+}
+
+/* Phones get a larger base still — the brief's "larger text on phone". */
+@media (max-width: 40rem) {
+  html {
+    font-size: 137.5%; /* 22px at default browser settings */
+  }
+
+  :root {
+    --fs-3xl: 2.1rem;
+    --fs-2xl: 1.8rem;
+    --fs-xl: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition: 0ms;
+  }
+}

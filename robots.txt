@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /$
+Allow: /index.html
+Allow: /contact.html
+Allow: /privacy.html
+Disallow: /flow.html
+Disallow: /thanks.html
