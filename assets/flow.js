@@ -462,8 +462,8 @@
     }
 
     next.appendChild(el('p', {
-      html: 'Call <a href="tel:+18015550142">(801) 555-0142</a> or email ' +
-            '<a href="mailto:hello@switzerhealth.com">hello@switzerhealth.com</a>.'
+      html: 'Call <a href="tel:+13853403130">385-340-3130</a> or email ' +
+            '<a href="mailto:care@switzerhealth.com">care@switzerhealth.com</a>.'
     }));
     next.appendChild(el('p', {}, [
       el('a', { class: 'btn btn--secondary', href: '/contact.html', text: 'Send us a message' })

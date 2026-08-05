@@ -1,7 +1,7 @@
 # SwitzerHealth — RPM signup & eligibility flow
 
 A static signup site for consumer remote patient monitoring, built for
-`signup.switzerhealth.com`. Designed for older adults and family caregivers on a phone,
+`enrollment.switzerhealth.com`. Designed for older adults and family caregivers on a phone,
 often standing in a conference hall.
 
 No build step, no framework, no dependencies. The repository root is the deployable site.
@@ -86,8 +86,8 @@ These cannot be done from code:
 
 ## Before launch
 
-- [ ] Replace the placeholder phone `(801) 555-0142` and `hello@switzerhealth.com`
-      throughout. They appear in every page header/footer, `flow.js`, and `privacy.html`.
+- [x] Contact details are live: `385-340-3130` and `care@switzerhealth.com` (catch-all
+      domain). They appear in every page header/footer, `flow.js`, and `privacy.html`.
 - [ ] Replace `assets/logo-mark.svg` with the official vector from marketing — the current
       file is a hand-reconstruction traced from the brand book. The inline copies in each
       page's header need the same path data. The **wordmark** needs no asset; it is live
