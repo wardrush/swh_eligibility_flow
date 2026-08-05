@@ -1,3 +1,30 @@
+> # ⚠️ MOVED
+>
+> This flow now lives in **`aybab2/switzerhealth.com`** under **`site/enroll/`**, served by the
+> existing Cloudflare Worker at **`enroll.switzerhealth.com`**.
+> (`enrollment.switzerhealth.com` 301-redirects there.)
+>
+> **Make changes there, not here.** This repository is kept for history only.
+>
+> What changed in the move:
+>
+> - **Netlify Forms is gone.** Both posts now go to `POST /api/enroll`, which records the lead
+>   in a SharePoint list via Microsoft Graph, with a Resend notification email as the fallback.
+>   The 100-submissions/month Netlify cap no longer applies.
+> - `privacy.html` and `contact.html` were **not** ported — the pages link to
+>   `switzerhealth.com/privacy.html`, `/hipaa.html` and `/#contact` instead.
+> - `netlify.toml`'s headers and redirects are now Worker logic in `_worker.js`.
+> - The privacy boundary is unchanged and now enforced on both sides: `TRANSMIT_FIELDS` in
+>   `flow.js` is mirrored by `ALLOWED_FIELDS` in `functions/api/enroll.js`.
+>
+> **Before decommissioning the Netlify site, export the existing form submissions to CSV** —
+> they are deleted with the site.
+>
+> The open pre-launch items below (logo vector, citation checks, counsel review of the privacy
+> copy, TCPA consent sign-off) carried over and are tracked in the new repo's README.
+
+---
+
 # SwitzerHealth — RPM signup & eligibility flow
 
 A static signup site for consumer remote patient monitoring, built for
