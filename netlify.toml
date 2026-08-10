@@ -11,10 +11,21 @@
 # frames, or images, so there is nothing to allow. `style-src` permits inline
 # styles because a handful of one-off layout values are set with the `style`
 # attribute; everything else is 'self' only.
+#
+# The two exceptions are the intake endpoint. Submissions go from the browser
+# straight to a Power Automate HTTP trigger, so `connect-src` has to allow the
+# fetch() from flow.js and `form-action` has to allow the native POST from the
+# no-JavaScript fallback forms. Without both, submissions fail silently in a
+# way that looks exactly like a network problem.
+#
+# `prod-NN.<region>.logic.azure.com` is the shape of a Power Automate trigger
+# host; the number and region are assigned when the flow is created. Narrow the
+# wildcard to the exact host once the flow exists — it does not change unless
+# the flow is recreated. Tenants on GCC/GCC High use *.logic.azure.us instead.
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://*.logic.azure.com; form-action 'self' https://*.logic.azure.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=(), interest-cohort=()"

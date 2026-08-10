@@ -62,11 +62,17 @@
     </div>
 
     <!-- ===================================================================
-         No-JavaScript fallback — AND the Netlify form declaration for
-         `contact-lead`. Netlify's build bot parses this markup at deploy time
-         to register the form and its fields; flow.js then posts to the same
-         form name with fetch. Keep the field list here in sync with
-         TRANSMIT_FIELDS in flow.js — Netlify ignores fields it has not seen.
+         No-JavaScript fallback.
+
+         Posts natively to the same Power Automate trigger that flow.js uses.
+         config.js cannot help here — no JavaScript is exactly the case where
+         it does not run — so the endpoint URL is literal in the `action`
+         below and has to be updated alongside assets/config.js.
+
+         `redirect_to` is what tells the flow to answer 302 instead of 200: a
+         native form POST navigates to whatever comes back, so without it the
+         reader would land on a raw response body instead of the thank-you
+         page. flow.js never sends this field.
          =================================================================== -->
     <div id="fallback">
       <h1>See if you qualify</h1>
@@ -82,9 +88,11 @@
         </p>
       </div>
 
-      <form name="contact-lead" method="POST" action="/thanks.html"
-            data-netlify="true" data-netlify-honeypot="bot-field">
+      <!-- SET THIS: the Power Automate HTTP trigger URL, same value as
+           intakeEndpoint in assets/config.js. -->
+      <form name="contact-lead" method="POST" action="">
         <input type="hidden" name="form-name" value="contact-lead">
+        <input type="hidden" name="redirect_to" value="/thanks.html">
         <input type="hidden" name="ref" value="">
         <input type="hidden" name="source" value="no-js">
         <input type="hidden" name="preferred_contact" value="unknown">
@@ -128,29 +136,13 @@
       </form>
     </div>
 
-    <!-- ===================================================================
-         Netlify form declaration for `eligibility-result`. Never displayed;
-         it exists purely so the build bot registers the form and its fields.
-         Posted by flow.js when the reader reaches the result screen.
-
-         Note what is NOT here: no condition, insurance, doctor, or home
-         answers. Those never leave the browser.
-         =================================================================== -->
-    <form name="eligibility-result" method="POST" data-netlify="true"
-          data-netlify-honeypot="bot-field" hidden>
-      <input type="hidden" name="form-name" value="eligibility-result">
-      <input type="hidden" name="ref">
-      <input type="hidden" name="first_name">
-      <input type="hidden" name="last_name">
-      <input type="hidden" name="email">
-      <input type="hidden" name="phone">
-      <input type="hidden" name="contact_optin">
-      <input type="hidden" name="source">
-      <input type="hidden" name="submitted_at">
-      <input type="hidden" name="eligible">
-      <input type="hidden" name="clinical_review">
-      <input name="bot-field">
-    </form>
+    <!-- The `eligibility-result` submission has no markup counterpart. It used
+         to need one so Netlify's build bot would register the form and its
+         fields; Power Automate accepts whatever the flow's parser recognises,
+         so the allow-list in flow.js is now the only place fields are
+         declared. What is still absent from that list is the point: no
+         condition, insurance, doctor, or home answers. Those never leave the
+         browser. -->
 
   </div>
 </main>
@@ -173,6 +165,7 @@
   </div>
 </footer>
 
+<script src="/assets/config.js"></script>
 <script src="/assets/questions.js"></script>
 <script src="/assets/flow.js"></script>
 </body>

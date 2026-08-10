@@ -1,7 +1,7 @@
 /* ============================================================================
    SwitzerHealth — Eligibility flow
 
-   Depends on questions.js (QUESTIONS, scoreAnswers).
+   Depends on config.js (SWH_CONFIG) and questions.js (QUESTIONS, scoreAnswers).
 
    ---------------------------------------------------------------------------
    THE PRIVACY BOUNDARY
@@ -10,6 +10,11 @@
    key that is not in it, so a health answer cannot reach the network even if
    someone later passes the whole answer object by mistake. There is no code
    path that serializes `state.answers`.
+
+   This boundary is unchanged by the move to Microsoft 365. The destination is
+   now covered by a BAA, so transmitting the answers would be *permissible* —
+   it is still not done, because the result screen is rendered locally and does
+   not need them. Widening the allow-list is a policy decision, not a cleanup.
 
    To verify: open DevTools -> Network, complete the flow, inspect the two POST
    bodies. They must contain contact fields and booleans only.
@@ -36,6 +41,7 @@
     'source',
     'consent_text',
     'submitted_at',
+    'elapsed_ms',
     'eligible',
     'clinical_review'
   ];
@@ -53,7 +59,8 @@
     ref: null,
     contactPosted: false,
     source: '',
-    result: null
+    result: null,
+    startedAt: Date.now()
   };
 
   var els = {};
@@ -101,8 +108,32 @@
   }
 
   /* --- Network -------------------------------------------------------------
-     Netlify Forms accepts a urlencoded POST to any path on the site as long as
-     `form-name` matches a form it discovered in the deployed HTML. */
+     Submissions go straight from the browser to a Power Automate HTTP trigger
+     in the SwitzerHealth Microsoft 365 tenant, which writes them to a
+     SharePoint list. Both are in scope of the Microsoft BAA.
+
+     Straight from the browser is the point. Proxying through a function on the
+     hosting platform would be easier to secure, but it would put contact
+     details and the clinical-review flag through a processor with no BAA. The
+     host serves static files and sees no submission.
+
+     Three constraints are load-bearing and easy to break:
+
+     1. Content-Type stays `application/x-www-form-urlencoded`. That keeps this
+        a CORS "simple request", so the browser sends no OPTIONS preflight —
+        which the Power Automate trigger does not answer. Switching to
+        application/json to get a tidier flow body breaks every submission.
+     2. The flow's Response action must return Access-Control-Allow-Origin for
+        this site, or `res.ok` below is unreadable and every submission looks
+        like a failure and queues forever.
+     3. The flow must answer 200, not a 302. fetch() follows redirects, and the
+        redirected request then fails CORS. Only the no-JavaScript forms, which
+        send `redirect_to`, get a 302 back. */
+
+  function endpoint() {
+    var url = ((window.SWH_CONFIG || {}).intakeEndpoint || '').trim();
+    return url.indexOf('https://') === 0 ? url : null;
+  }
 
   function encode(data) {
     var params = new URLSearchParams();
@@ -131,8 +162,18 @@
     writeQueue(q);
   }
 
+  /* The endpoint is resolved per send, not baked into the queued body, so a
+     submission parked while the site was misconfigured still flushes once
+     config.js is corrected. */
   function send(body) {
-    return fetch('/', {
+    var url = endpoint();
+    if (!url) {
+      return Promise.reject(new Error(
+        'SWH_CONFIG.intakeEndpoint is not set — see assets/config.js. ' +
+        'Submissions are being queued locally, not delivered.'
+      ));
+    }
+    return fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body
@@ -145,11 +186,22 @@
   function postForm(formName, data) {
     data['form-name'] = formName;
     data.submitted_at = new Date().toISOString();
+    /* How long the reader spent on the page. The flow rejects implausibly fast
+       submissions — the endpoint is public, so this is one of the few signals
+       available now that the host's spam filtering is out of the path. */
+    data.elapsed_ms = String(Date.now() - state.startedAt);
     var body = encode(data);
 
     return send(body)['catch'](function () {
       return send(body); // one immediate retry — most failures are transient
-    })['catch'](function () {
+    })['catch'](function (err) {
+      /* Loud on purpose. A misconfigured endpoint and a dead conference hotspot
+         look identical from here, and the first one loses every lead of the
+         day. Check the console before blaming the wifi. */
+      if (window.console && window.console.error) {
+        window.console.error('[SwitzerHealth] submission queued, not delivered: ' +
+          ((err && err.message) || 'unknown error'));
+      }
       enqueue(body);
       return null;
     });

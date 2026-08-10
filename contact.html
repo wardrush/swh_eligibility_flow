@@ -55,9 +55,13 @@
         Fill in whichever parts you like. We reply within two business days.
       </p>
 
-      <form name="contact-message" method="POST" action="/thanks.html"
-            data-netlify="true" data-netlify-honeypot="bot-field">
+      <!-- SET THIS: the Power Automate HTTP trigger URL, same value as
+           intakeEndpoint in assets/config.js. This form has no scripted path —
+           it posts natively, and `redirect_to` is what makes the flow answer
+           with a 302 to the thank-you page rather than a response body. -->
+      <form name="contact-message" method="POST" action="">
         <input type="hidden" name="form-name" value="contact-message">
+        <input type="hidden" name="redirect_to" value="/thanks.html">
         <p class="sr-only">
           <label>Leave this field empty: <input name="bot-field"></label>
         </p>
