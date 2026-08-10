@@ -1,3 +1,34 @@
+> # ⚠️ MOVED
+>
+> This flow now lives in its own repository, **`aybab2/enrollment.switzerhealth.com`**, deployed
+> as its own Cloudflare Worker (`switzerhealth-enroll`) at **`enrollment.switzerhealth.com`**.
+> (`enroll.switzerhealth.com` 301-redirects there.)
+>
+> **Make changes there, not here.** This repository is kept for history only.
+>
+> What changed in the move:
+>
+> - **Netlify Forms is gone.** Both posts now go to `POST /api/enroll`, which records the lead
+>   in a SharePoint list via Microsoft Graph, with a Resend notification email as the fallback.
+>   The 100-submissions/month Netlify cap no longer applies.
+> - `privacy.html` and `contact.html` were **not** ported — the pages link to
+>   `switzerhealth.com/privacy.html`, `/hipaa.html` and `/#contact` instead.
+> - `netlify.toml`'s security headers became `site/_headers`; its friendly-URL redirects became
+>   Worker logic in `_worker.js`.
+> - The privacy boundary is unchanged and now enforced on both sides: `TRANSMIT_FIELDS` in
+>   `flow.js` is mirrored by `ALLOWED_FIELDS` in `functions/api/enroll.js`.
+> - Turnstile was considered and deliberately left out — single-use tokens expiring in ~300s
+>   cannot cover two posts minutes apart, and a body replayed from the offline queue hours later
+>   would carry a dead token and fail permanently.
+>
+> **Before decommissioning the Netlify site, export the existing form submissions to CSV** —
+> they are deleted with the site.
+>
+> The open pre-launch items below (logo vector, citation checks, counsel review of the privacy
+> copy, TCPA consent sign-off) carried over and are tracked in the new repo's README.
+
+---
+
 # SwitzerHealth — RPM signup & eligibility flow
 
 A static signup site for consumer remote patient monitoring, built for
