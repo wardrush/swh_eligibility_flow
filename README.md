@@ -106,149 +106,26 @@ Three logical forms, distinguished by the `form-name` field:
 Under Netlify these were append-only, and a `contact-lead` row with no matching
 `eligibility-result` row *was* the drop-out list. The flow can now look up the earlier row
 by `ref` and update it, so one person is one row and the drop-out list becomes a view
-filtered on `eligible is empty`. The setup below does that. Append-only still works if you
+filtered on `eligible is empty`. The runbook does that. Append-only still works if you
 prefer it; it just costs you the reconciliation.
 
-## Standing up the Power Automate flow
+## Standing up the backend
 
-### 1. The SharePoint list
+The full runbook lives in **[`docs/m365-setup.md`](docs/m365-setup.md)** — service account
+and licensing, the SharePoint lists, the Power Platform environment, every action in the
+flow, and the traps worth knowing before you hit them. Work through that document; this
+README covers the site code only.
 
-Create a **dedicated site** — not a corner of an existing one. Its permissions are the
-access-control boundary for everything the site collects.
+Two things from it are worth repeating here, because they are the ones that bite from the
+code side:
 
-- Restrict membership to the signup and clinical staff who work the queue, via a group
-  rather than named individuals.
-- Turn off "Anyone with the link" sharing for the site.
-- Apply a **Purview retention label** to the list matching whatever retention period
-  counsel sets. Decide this before go-live; retroactive labelling is painful.
-- Confirm auditing is on in Purview so list access is reviewable.
-
-List columns: one per row of the *What is stored* table above, all single-line text except
-`submitted_at` (date/time) and `elapsed_ms` (number). Add `ref` as an **indexed** column —
-the flow filters on it on every result submission, and an unindexed lookup will start
-failing once the list passes the 5,000-item view threshold.
-
-### 2. The flow
-
-Create it in a **dedicated Power Platform environment**, owned by a **service account with
-co-owners**, not by an individual. A flow owned by one person stops working when that
-person leaves, and nobody notices until the leads stop arriving.
-
-**Trigger — When an HTTP request is received.** Method `POST`. Leave the request body
-schema empty; supplying one forces JSON parsing, and this endpoint receives urlencoded
-bodies.
-
-**Parse the body.** Everything arrives as `application/x-www-form-urlencoded`, from both
-the scripted flow and the native no-JavaScript forms, so there is one format to handle.
-
-1. `Compose` → `raw`: `string(triggerBody())`. Run the flow once and check the trigger
-   output — if you see a base64 `$content` wrapper rather than the raw string, use
-   `decodeBase64(triggerOutputs()['body']['$content'])` instead.
-2. `Select` → `pairs`, From `split(outputs('raw'), '&')`, in key/value mode:
-   - key: `first(split(item(), '='))`
-   - value: `uriComponentToString(replace(join(skip(split(item(), '='), 1), '='), '+', '%20'))`
-
-   Replacing `+` before decoding, and re-joining on `=`, are both load-bearing: a value
-   containing either character is corrupted otherwise. Let the Select build the objects
-   rather than concatenating JSON by hand — a reader named O'Brien or D'Angelo will
-   otherwise break the parse.
-3. `Initialize variable` → `fields`, type Object, value `{}`.
-4. `Apply to each` over `body('pairs')`, **concurrency set to 1**, containing a single
-   `Set variable`: `fields` = `setProperty(variables('fields'), item()['key'], item()['value'])`.
-
-Fields are then addressable as `variables('fields')?['first_name']`.
-
-**Validate before writing.** A `Condition` that must pass all of:
-
-- `empty(variables('fields')?['bot-field'])` — the honeypot
-- `greater(int(coalesce(variables('fields')?['elapsed_ms'], '0')), 3000)` — nobody fills
-  this form in under three seconds
-- `less(length(outputs('raw')), 4000)` — payload ceiling
-- `form-name` is one of the three known values
-
-On failure, respond `400` and terminate. Do not write the row.
-
-**Branch on `form-name`.**
-
-- `contact-lead` → *Create item* in the leads list.
-- `eligibility-result` → *Get items* filtered `ref eq '<ref>'`, then *Update item* on the
-  match, falling back to *Create item* if there is none. The fallback matters: a reader who
-  clears storage mid-flow, or whose contact post is still queued offline, arrives with a
-  result and no earlier row.
-- `contact-message` → *Create item* in a separate enquiries list.
-
-**Notify.** When `clinical_review` is `yes`, send mail to the clinical inbox. Exchange
-Online is in scope of the same BAA, so contact details in the body are permissible — but
-send the `ref` and a link to the list item instead. One copy of a record is easier to
-retain, review, and delete than two.
-
-**Respond.** This is where it most often goes wrong.
-
-| Case | Response |
-|---|---|
-| `redirect_to` is non-empty (no-JavaScript forms) | `302` with `Location: https://enrollment.switzerhealth.com` + the value |
-| Otherwise (`fetch` from `flow.js`) | `200`, header `Access-Control-Allow-Origin: https://enrollment.switzerhealth.com` |
-
-Both halves matter. Without the CORS header, `flow.js` cannot read `res.ok`, every
-submission looks like a failure, and leads pile up in `localStorage` while the list stays
-empty — with the rows written correctly the whole time, which makes it a memorable
-afternoon to debug. And the scripted path must **not** get a 302: `fetch` follows
-redirects, and the redirected request fails CORS.
-
-Validate `redirect_to` as a site-relative path beginning with `/` before building the
-`Location` header, or the endpoint becomes an open redirect.
-
-Put the Response action *after* the SharePoint write, not before. Responding early is
-faster on bad wifi, but then a failed write returns `200` and the browser discards a lead
-it would otherwise have queued and retried.
-
-### 3. Wire up the site
-
-The URL appears in three places, all marked:
-
-1. `assets/config.js` → `intakeEndpoint` — the scripted flow
-2. `flow.html` → the fallback `<form action>`
-3. `contact.html` → the enquiry `<form action>`
-
-Then narrow `connect-src` and `form-action` in `netlify.toml` from
-`https://*.logic.azure.com` to the exact host the flow was assigned.
-
-### 4. Verify
-
-- Complete the flow with DevTools → Network open. Both POSTs must return **200 with a CORS
-  header**, and the bodies must contain contact fields and booleans only — no condition
-  names, no insurance value, no home answers.
-- Submit with JavaScript disabled. You should land on `/thanks.html`, not on a response
-  body.
-- Submit `contact.html`. Same.
-- Confirm one row per person in the list, with the result merged into the contact row.
-
-## What the migration does not fix
-
-- **The endpoint URL is public.** A static site cannot hold a credential, so the trigger's
-  `sig=` signature ships in readable JavaScript. It is write-only and returns nothing, but
-  anyone can POST to it, which is why the validation step above is not optional. Regenerate
-  the URL by editing and re-saving the trigger if it is ever abused.
-- **Licensing.** The HTTP request trigger is a premium connector. It needs a Power Automate
-  Premium seat for the flow's owner, or a per-flow plan — check current pricing, and check
-  that no Power Platform **DLP policy** in your tenant blocks the HTTP trigger, which is a
-  common default and fails at save time.
-- **The queue holds submissions on the device.** Failed posts sit in `localStorage` until
-  they flush. On a shared conference tablet that is a copy of someone's contact details on
-  hardware you do not control. This was true under Netlify too; the BAA does not reach it.
-- **`clinical_review = yes` next to a name is health information about an identified
-  person.** Moving it under the BAA is the fix for where it was being stored, not a reason
-  to treat the record as low-sensitivity now that it has arrived somewhere better.
-
-## Remaining setup outside code
-
-1. **Point the `enrollment` subdomain** at the site and enable HTTPS.
-2. **Confirm the tenant's BAA covers Power Platform**, not just Exchange and SharePoint. It
-   does under the standard DPA for paid commercial plans, but confirm it for your agreement
-   rather than assuming, and re-confirm if you move to a GCC environment.
-3. **Set up flow failure alerts.** Power Automate emails the flow owner on failure — with a
-   service account owner, that mail needs to reach a monitored inbox, or a broken flow is
-   silent.
+- **The flow must answer `200` with an `Access-Control-Allow-Origin` header** for the
+  scripted path. Without it `flow.js` cannot read `res.ok`, every submission looks like a
+  failure, and leads pile up in `localStorage` while the rows are being written correctly
+  the whole time.
+- **The endpoint URL goes in three places**: `assets/config.js` (`intakeEndpoint`),
+  `flow.html`'s fallback `<form action>`, and `contact.html`'s enquiry `<form action>`.
+  Then narrow `https://*.logic.azure.com` in `netlify.toml` to the assigned host.
 
 ## Before launch
 
@@ -257,6 +134,9 @@ Then narrow `connect-src` and `form-action` in `netlify.toml` from
       delivering it. Nothing on the screen looks wrong. Check the console.
 - [ ] Have counsel confirm the privacy notice's description of where submissions go now
       that they land in Microsoft 365 rather than with the website host.
+- [ ] Point the `enrollment` subdomain at the site and enable HTTPS.
+- [ ] Work through [`docs/m365-setup.md`](docs/m365-setup.md) to the end, including the
+      verification steps — the site cannot be tested without the backend standing up.
 - [x] Contact details are live: `385-340-3130` and `care@switzerhealth.com` (catch-all
       domain). They appear in every page header/footer, `flow.js`, and `privacy.html`.
 - [ ] Replace `assets/logo-mark.svg` with the official vector from marketing — the current
