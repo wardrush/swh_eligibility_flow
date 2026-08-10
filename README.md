@@ -1,8 +1,8 @@
 > # ⚠️ MOVED
 >
-> This flow now lives in **`aybab2/switzerhealth.com`** under **`site/enroll/`**, served by the
-> existing Cloudflare Worker at **`enroll.switzerhealth.com`**.
-> (`enrollment.switzerhealth.com` 301-redirects there.)
+> This flow now lives in its own repository, **`aybab2/enrollment.switzerhealth.com`**, deployed
+> as its own Cloudflare Worker (`switzerhealth-enroll`) at **`enrollment.switzerhealth.com`**.
+> (`enroll.switzerhealth.com` 301-redirects there.)
 >
 > **Make changes there, not here.** This repository is kept for history only.
 >
@@ -13,9 +13,13 @@
 >   The 100-submissions/month Netlify cap no longer applies.
 > - `privacy.html` and `contact.html` were **not** ported — the pages link to
 >   `switzerhealth.com/privacy.html`, `/hipaa.html` and `/#contact` instead.
-> - `netlify.toml`'s headers and redirects are now Worker logic in `_worker.js`.
+> - `netlify.toml`'s security headers became `site/_headers`; its friendly-URL redirects became
+>   Worker logic in `_worker.js`.
 > - The privacy boundary is unchanged and now enforced on both sides: `TRANSMIT_FIELDS` in
 >   `flow.js` is mirrored by `ALLOWED_FIELDS` in `functions/api/enroll.js`.
+> - Turnstile was considered and deliberately left out — single-use tokens expiring in ~300s
+>   cannot cover two posts minutes apart, and a body replayed from the offline queue hours later
+>   would carry a dead token and fail permanently.
 >
 > **Before decommissioning the Netlify site, export the existing form submissions to CSV** —
 > they are deleted with the site.
