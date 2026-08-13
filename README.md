@@ -1,24 +1,56 @@
 # SwitzerHealth — RPM signup & eligibility flow
 
-A static signup site for consumer remote patient monitoring, built for
-`enrollment.switzerhealth.com`. Designed for older adults and family caregivers on a phone,
-often standing in a conference hall.
+> ## ⚠️ This repository is no longer deployed. Do not deploy it.
+>
+> **The live build is [`aybab2/enrollment.switzerhealth.com`](https://github.com/aybab2/enrollment.switzerhealth.com)**,
+> which serves `enrollment.switzerhealth.com` (and `enroll.` via a zone redirect) from
+> **Cloudflare Workers**. Every page here was ported there, and lead capture moved from Netlify
+> Forms to a SharePoint list written through Microsoft Graph.
+>
+> **Netlify is not the build for this product any more.** `netlify.toml` has been deleted, so
+> pushing this repo to Netlify would publish a site with no security headers, no redirects, and
+> form posts that go nowhere.
+>
+> What is left here is the source history and the original markup. Read it; do not ship it.
+>
+> **Changes belong in the Cloudflare repo.** A fix made here reaches no one.
 
-No build step, no framework, no dependencies. The repository root is the deployable site.
+A static signup site for consumer remote patient monitoring, originally built for
+`enrollment.switzerhealth.com` on Netlify. Designed for older adults and family caregivers on a
+phone, often standing in a conference hall.
 
-## Run it locally
+No build step, no framework, no dependencies.
 
-Any static server works:
+## Read it locally
+
+Any static server works — the pages render, the flow clicks through, and the form posts fail
+(there is no Netlify behind them any more):
 
 ```bash
 python3 -m http.server 8080     # then open http://localhost:8080
 ```
 
-To exercise the Netlify Forms posts and the header/redirect rules:
+## The enrollment mode flag — it lives in the Cloudflare repo
 
-```bash
-npx netlify dev
-```
+The live host serves **one of two** enrollment experiences, chosen by the `ENROLLMENT_MODE` var in
+`wrangler.jsonc` over in `aybab2/enrollment.switzerhealth.com`:
+
+| Mode | What a visitor gets | Where answers land |
+| --- | --- | --- |
+| **`forms`** ← currently live | One page wrapping the Microsoft Forms questionnaire | Microsoft Forms, in the M365 tenant |
+| `quiz` | The full clickable eleven-step flow, scored in the browser | SharePoint list via Microsoft Graph |
+
+Flipping it is a one-line change to that repo's `wrangler.jsonc` followed by a push. **There is no
+flag on this side** — nothing here is served.
+
+`forms.html` in this repo is the static twin of that page, kept because it is the last thing this
+repo can still show you about the forms experience without a Worker. The **canonical** version is
+`functions/lib/forms-page.js` in the Cloudflare repo; if the two ever disagree, that one is right.
+
+One thing worth carrying in your head when the flag is on: the privacy boundary described below is
+the `quiz` posture. The quiz scores its health questions in the browser and never transmits them; a
+Microsoft Form submits every answer to the tenant. Both are defensible, but they are not the same
+promise, and site copy should not claim the stronger one while the weaker one is live.
 
 ## The privacy boundary (read this before changing anything)
 
@@ -57,9 +89,10 @@ no insurance value, no home answers.
 | `eligible` | `true` / `false` |
 | `clinical_review` | `yes` / `no` — the flag for the clinical team |
 
-## Forms
+## Forms — historical
 
-Three Netlify forms, discovered by the build bot from the deployed HTML:
+Three Netlify forms, discovered by the build bot from the deployed HTML. The live build replaced
+all three with a single `POST /api/enroll` writing to SharePoint:
 
 | Form | Fires | Purpose |
 |---|---|---|
@@ -71,9 +104,14 @@ Submissions are **append-only** — Netlify has no way to update an earlier one.
 `contact-lead` row with no matching `eligibility-result` row is someone who dropped out
 partway, which is exactly the follow-up list to work.
 
-## Manual setup in the Netlify UI
+## Manual setup in the Netlify UI — historical
 
-These cannot be done from code:
+Kept for the record. **None of this is live**, and the Netlify site should be decommissioned once
+its submissions have been exported (see "Decommissioning" below). The equivalent one-time setup for
+the live build — Entra app registration, the `Sites.Selected` grant, the SharePoint list schema,
+the Cloudflare custom domain and WAF rule — is in the Cloudflare repo's README.
+
+These could not be done from code:
 
 1. **Enable Forms** in Site configuration → Forms.
 2. **Add email notifications.** Point `eligibility-result` at the clinical inbox and
@@ -84,7 +122,20 @@ These cannot be done from code:
 4. **Point the `signup` subdomain** at the site and enable HTTPS.
 5. **Enable spam filtering.** Both forms already carry a `bot-field` honeypot.
 
-## Before launch
+## Decommissioning
+
+- [ ] **Export the Netlify form submissions to CSV before deleting the site.** `contact-lead`,
+      `eligibility-result`, and `contact-message`. They are the only copy — nothing was replayed
+      into SharePoint during the port.
+- [ ] Delete the Netlify site, or at minimum unlink it from this repository so a push cannot
+      republish a headerless build.
+- [ ] Repoint any DNS still aimed at Netlify. `enrollment.` and `enroll.` are already on
+      Cloudflare; check the `signup` subdomain, and any QR code or print run that used it.
+- [ ] Archive this repository on GitHub once the above are done.
+
+## Before launch — carried over to the Cloudflare repo
+
+These were open when the port happened and are tracked there now. Fixing them here fixes nothing.
 
 - [x] Contact details are live: `385-340-3130` and `care@switzerhealth.com` (catch-all
       domain). They appear in every page header/footer, `flow.js`, and `privacy.html`.

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enrollment | SwitzerHealth</title>
+<meta name="description" content="Answer a few questions and the SwitzerHealth team will follow up about nighttime monitoring at home.">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="icon" href="/assets/logo-mark.svg" type="image/svg+xml">
+<!--
+  The single-page Microsoft Forms enrollment experience — one half of the
+  enrollment-mode flag.
+
+  ⚠ NOT DEPLOYED, AND NOT THE CANONICAL COPY. This repository is retired; the
+  live build is aybab2/enrollment.switzerhealth.com on Cloudflare Workers, and
+  the page it actually serves is functions/lib/forms-page.js there — same
+  markup, rendered by the Worker when ENROLLMENT_MODE is "forms". If the two
+  disagree, that one is right. This file exists so the forms experience is
+  still legible from inside this repo.
+
+  Note that the security headers went with netlify.toml when it was deleted.
+  Served from a plain static host this page has no CSP at all; the live one is
+  set by the Worker and includes frame-src for the Microsoft Forms origin,
+  without which the frame is blocked and the page renders as a white box.
+
+  Two details carried over from the standalone enroll.switzerhealth.com Worker,
+  both learned the hard way:
+
+    - The embed URL must use the capital-P /Pages/ResponsePage.aspx form. The
+      lowercase /pages/responsepage.aspx variant renders blank inside an
+      iframe, with no error anywhere.
+    - The short link (forms.cloud.microsoft/r/…) is what printed QR codes and
+      SMS point at. It resolves to the same form and is the fallback below.
+
+  Note the privacy difference this page carries: the clickable flow scores its
+  health questions in the browser and never transmits them, while a Microsoft
+  Form submits every answer to the M365 tenant. That is a defensible place for
+  them to go, but it is a different posture — see README.
+-->
+<!-- Nothing links here from the rest of this repo, and nothing serves it. -->
+<style>
+  /* The frame takes whatever the viewport has left, so the footer sits at the
+     bottom of the window rather than halfway up it; min-height is the floor
+     for when that leaves too little to answer a question in.
+
+     Flexing the body is safe here and nowhere else on the site: this page has
+     no sections, only header / main / footer. */
+  body { display: flex; flex-direction: column; min-height: 100vh; }
+  main { flex: 1; display: flex; flex-direction: column; }
+  .form-frame {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--sp-4);
+    margin-bottom: var(--sp-4);
+  }
+  .form-frame iframe {
+    flex: 1;
+    width: 100%;
+    max-width: 100%;
+    min-height: 24rem;
+    border: 0;
+    border-radius: 6px;
+    background: var(--swh-white);
+  }
+  @media (max-width: 640px) {
+    /* A phone has no spare height to give the frame, so ask for most of the
+       viewport outright and let the page scroll to the fallback line. */
+    .form-frame iframe { min-height: 68vh; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a class="wordmark" href="/">
+      <svg class="wordmark__mark" style="color: var(--swh-red)" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
+        <g fill="none" stroke="currentColor" stroke-width="22">
+          <path d="M 306 89 L 150 89 A 60 60 0 0 0 90 149 L 90 176"/>
+          <path d="M 90 199 L 158 199 L 188 112 L 220 286 L 246 199 L 306 199"/>
+          <path d="M 90 311 L 246 311 A 60 60 0 0 0 306 251 L 306 224"/>
+        </g>
+      </svg>
+      <span><span class="wordmark__switzer">Switzer</span><span class="wordmark__health">Health</span></span>
+    </a>
+    <div class="site-header__contact">
+      <a href="tel:+13853403130">Call 385-340-3130</a>
+      <a href="mailto:care@switzerhealth.com">care@switzerhealth.com</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <div class="container form-frame">
+    <iframe
+      title="SwitzerHealth enrollment eligibility questionnaire"
+      src="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=Tj5Gxlm7lE2lraiuw8wHHHuXaYHuatZPri43sCoOL7NUQ1owUzBKRTk2ODdTWVZXNjBGRE40T1Y3Sy4u&amp;embed=true"
+      allowfullscreen></iframe>
+    <p style="margin-top: var(--sp-2); font-size: var(--fs-sm)">
+      Form not loading?
+      <a href="https://forms.cloud.microsoft/r/bBJmMeQPzz" target="_blank" rel="noopener">Open it in a new window</a>,
+      or call <a href="tel:+13853403130">385-340-3130</a> and we will take your details over the phone.
+    </p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="site-footer__legal">
+      <p class="disclaimer">
+        <strong>This service does not replace emergency care. In an emergency, call 911.</strong>
+      </p>
+      <p class="disclaimer">
+        <a href="/privacy.html">Privacy notice</a> &middot;
+        <a href="/contact.html">Send a message</a> &middot;
+        <a href="https://switzerhealth.com">switzerhealth.com</a>
+      </p>
+      <p class="disclaimer">&copy; 2026 SwitzerHealth. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

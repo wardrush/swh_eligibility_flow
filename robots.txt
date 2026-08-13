@@ -5,3 +5,4 @@ Allow: /contact.html
 Allow: /privacy.html
 Disallow: /flow.html
 Disallow: /thanks.html
+Disallow: /forms.html
