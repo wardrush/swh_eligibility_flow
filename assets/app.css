@@ -515,6 +515,12 @@ legend {
 .choice {
   position: relative;
   display: flex;
+  /* Grid and flex items refuse by default to shrink below their own
+     min-content width. At a large browser text setting the fixed parts of this
+     card — the control, the gap, the padding — leave less room than the
+     longest word needs, and the card pushes the whole page sideways. Allowing
+     it to shrink lets `overflow-wrap: break-word` do its job instead. */
+  min-width: 0;
   align-items: center;
   gap: var(--sp-3);
   min-height: var(--tap-min);
@@ -554,6 +560,7 @@ legend {
 }
 
 .choice__label {
+  min-width: 0;
   font-weight: var(--fw-bold);
 }
 
@@ -615,6 +622,7 @@ legend {
 }
 
 .consent span {
+  min-width: 0;
   font-size: var(--fs-base);
   line-height: var(--lh-snug);
 }
@@ -662,28 +670,48 @@ legend {
   border-width: 3px;
 }
 
-/* --- Flow chrome ---------------------------------------------------------- */
+/* --- Flow chrome ------------------------------------------------------------
+   Everything above the question is overhead. On a short screen at large text
+   the header, the top padding and the progress block together can eat half the
+   viewport before the reader sees a word of the question, so this section is
+   kept deliberately thin and gets thinner still in the short-viewport block at
+   the end of this file. */
 .flow {
-  padding-block: var(--sp-5) var(--sp-8);
+  padding-block: var(--sp-4) var(--sp-6);
 }
 
-/* Progress is stated in words. A bar alone is not readable to everyone. */
+/* Progress is stated in words. A bar alone is not readable to everyone.
+   Words and bar share one line so the block costs one row, not two; they
+   wrap back to two rows if the text is scaled up far enough to need it. */
 .progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-3);
   margin-bottom: var(--sp-4);
   padding-bottom: var(--sp-3);
   border-bottom: 1px solid var(--swh-rule);
 }
 
 .progress__text {
+  /* Shrinkable, so a reader on a very large text setting gets a wrapped label
+     rather than a page that scrolls sideways. */
+  flex: 0 1 auto;
+  min-width: 0;
   font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--swh-ink-soft);
-  margin-bottom: var(--sp-2);
+  line-height: var(--lh-tight);
+  margin-bottom: 0;
 }
 
 .progress__track {
+  /* Small basis on purpose: a large one pushes the bar onto its own line at
+     phone widths, which costs a whole row for a decorative element. It grows
+     to fill whatever is left over once the words have their space. */
+  flex: 1 1 3rem;
   height: 8px;
   background: var(--swh-rule);
   border-radius: 4px;
@@ -705,8 +733,19 @@ legend {
 
 /* Back sits left, Next sits right, both always visible, both full tap size.
    On phones they stack with Next on top — the primary action stays under the
-   thumb and above the fold. */
+   thumb and above the fold.
+
+   `position: sticky` is what keeps the next action on screen. The bar sits in
+   normal flow at the end of the question, and rides the bottom edge of the
+   viewport whenever the answers run past it — so a reader on a short screen
+   never has to scroll to find out how to continue, and never has to scroll
+   back down to press it. It settles into place at the true end of the page.
+   Sticky rather than fixed on purpose: a fixed bar keeps its own coordinates
+   when a phone keyboard opens and lands on top of the field being typed in. */
 .flow__nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
   display: flex;
   /* wrap-reverse keeps Next on the upper line once they stack, so the primary
      action stays nearest the thumb. Wrapping is load-bearing, not decorative:
@@ -716,8 +755,12 @@ legend {
   gap: var(--sp-3);
   align-items: center;
   margin-top: var(--sp-5);
-  padding-top: var(--sp-4);
+  padding-block: var(--sp-3);
+  /* Clear of the home indicator on a phone with a rounded/gestural bottom. */
+  padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--swh-rule);
+  /* Opaque: answers scroll underneath it, not through it. */
+  background: var(--swh-white);
   max-width: var(--measure);
 }
 
@@ -727,18 +770,34 @@ legend {
   max-width: 100%;
 }
 
-@media (max-width: 30rem) {
-  .flow__nav {
-    flex-direction: column-reverse;
-    flex-wrap: nowrap;
-  }
+/* Added by flow.js only while the bar is actually floating over content, so
+   it reads as a bar then and as a plain rule when it comes to rest. */
+.flow__nav--pinned {
+  box-shadow: var(--shadow-bar);
+}
 
-  /* Reset the flex shorthand: the main axis is now vertical, so the 10rem
-     basis inherited from the row layout would become a 10rem button *height*. */
-  .flow__nav .btn {
-    flex: 0 0 auto;
-    width: 100%;
-  }
+/* The sentinel flow.js watches to decide the above. Takes up no room and is
+   hidden from assistive technology in the markup. */
+#flow-nav-end {
+  height: 1px;
+}
+
+/* The same treatment for a plain form's submit button — the no-JS fallback on
+   the flow page runs well past one screen at this text size. */
+.form-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin-top: var(--sp-4);
+  padding-block: var(--sp-3);
+  padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--swh-rule);
+  background: var(--swh-white);
+  max-width: var(--measure);
+}
+
+.form-actions > :last-child {
+  margin-bottom: 0;
 }
 
 /* --- Result --------------------------------------------------------------- */
@@ -866,12 +925,182 @@ legend {
   max-width: none;
 }
 
+/* --- Short viewports --------------------------------------------------------
+   The reader we actually watched: a phone held in one hand, browser text set
+   large, and a visible viewport of maybe 550-700px once the browser's own
+   chrome is subtracted. At the default sizes that leaves roughly 250px of
+   header, padding and progress before the question begins, and puts the Next
+   button several scrolls below the fold.
+
+   Everything here buys vertical room back. Nothing here shrinks type, tap
+   targets, or contrast — those are the reasons the page works for this
+   audience in the first place. What gets cut is whitespace and chrome.
+
+   `rem` in a media query resolves against the browser's *initial* font size,
+   not the 137.5% set on <html>, so 48rem here means 768 device-independent
+   pixels regardless of how large the reader has set their text. That is the
+   intent: this is a question about how tall the screen is, not how big the
+   type is. The wrap-reverse rules above handle the large-type case on their
+   own, at any height.
+   ========================================================================= */
+@media (max-height: 48rem) {
+  /* Header: brand and the phone number stay — a reader who gets stuck needs
+     the number in reach — but the block shrinks to about one tap target. */
+  .site-header__inner {
+    padding-block: var(--sp-1);
+  }
+
+  .wordmark {
+    font-size: var(--fs-base);
+  }
+
+  .wordmark__mark {
+    width: 1.2em;
+    height: 1.2em;
+  }
+
+  /* The wordmark and the phone number do not fit on one line at phone widths,
+     and a second header row costs about 45px — eight per cent of a screen this
+     short. The mark stays, the lettering is taken out of the flow (not removed:
+     it is still the link's accessible name, and still the wordmark everywhere
+     the screen is taller). The phone number stays because a reader who gets
+     stuck halfway down a form needs it in reach, and the footer is past the
+     end of the page. */
+  .wordmark > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* This link, not the wordmark, sets the header's height. 3rem resolves to
+     exactly the 60px floor the tokens file names as the minimum tap target at
+     the default root size, and to 66px at the larger phone root — still above
+     the floor, and about 30px shorter than the 3.6rem used elsewhere. This is
+     the only control on the site allowed to sit at the floor rather than
+     above it, and only because it is chrome rather than part of the form. */
+  .site-header__contact a {
+    min-height: 3rem;
+  }
+
+  /* Hero: the "See if you qualify" button is the only thing on the landing
+     page that matters on the first screen. */
+  .hero {
+    padding-block: var(--sp-5);
+  }
+
+  /* The flow itself starts as high as the header allows. */
+  .flow {
+    padding-block: var(--sp-2) var(--sp-4);
+  }
+
+  .progress {
+    margin-bottom: var(--sp-3);
+    padding-bottom: var(--sp-2);
+  }
+
+  /* Question, its explanation, and the answers pulled into one block. The
+     type is untouched; only the air between the lines comes out. */
+  legend {
+    margin-bottom: var(--sp-1);
+  }
+
+  .step__help {
+    margin-bottom: var(--sp-2);
+  }
+
+  fieldset {
+    margin-bottom: var(--sp-4);
+  }
+
+  .field {
+    margin-bottom: var(--sp-3);
+  }
+
+  /* Keep Back and Next on one row so the pinned bar costs one tap target of
+     height instead of two. Back is sized to its own label and Next takes what
+     is left, because Next is the expected action and Back is the recovery one.
+     The bases are small enough that the row survives a 360px phone; below
+     that, or under heavy zoom, wrap-reverse still stacks them with Next on
+     top rather than cramming them. */
+  .flow__nav {
+    gap: var(--sp-2);
+    margin-top: var(--sp-4);
+    padding-block: var(--sp-1);
+    padding-bottom: calc(var(--sp-1) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* `min-height` still holds the tap target at full size; this only stops the
+     padding from pushing the button past it. */
+  .flow__nav .btn {
+    padding: var(--sp-2) var(--sp-3);
+  }
+
+  .flow__nav .btn--secondary {
+    flex: 0 1 auto;
+  }
+
+  .flow__nav .btn--primary {
+    flex: 1 1 6rem;
+  }
+
+  .form-actions {
+    padding-block: var(--sp-2);
+    padding-bottom: calc(var(--sp-2) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* A bar that stops short of both screen edges reads as a floating panel.
+     Cancel the container's side padding so the rule and its shadow run the
+     full width, then put the padding back on the bar itself so the buttons
+     stay on the same grid line as the answers above them. Width-scoped: on a
+     screen wide enough for the narrow container to be centred, the inset
+     panel is the correct look and this would only widen it by 35px. */
+  @media (max-width: 48rem) {
+    .flow__nav,
+    .form-actions {
+      margin-inline: calc(var(--sp-4) * -1);
+      padding-inline: var(--sp-4);
+      max-width: none;
+    }
+  }
+
+  .form-actions .btn--lg {
+    padding-block: var(--sp-3);
+  }
+
+  /* The result screen has no button bar — the flow is over — so the thing to
+     bring up the screen is the "What happens next" list under the verdict. */
+  .panel {
+    padding: var(--sp-3);
+  }
+
+  .result__headline {
+    margin-bottom: var(--sp-2);
+  }
+
+  .site-footer {
+    margin-top: var(--sp-5);
+    padding-block: var(--sp-5);
+  }
+}
+
 /* --- Print ---------------------------------------------------------------- */
 @media print {
   .site-header__contact,
   .flow__nav,
   .skip-link {
     display: none;
+  }
+
+  /* Nothing sticks to a sheet of paper. */
+  .form-actions {
+    position: static;
+    box-shadow: none;
   }
 
   body {

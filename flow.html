@@ -59,6 +59,14 @@
         <button type="button" class="btn btn--secondary" id="flow-back">Back</button>
         <button type="button" class="btn btn--primary" id="flow-next">Next</button>
       </div>
+
+      <!-- Sticky-bar sentinel. The Back/Next bar above is `position: sticky`,
+           so it rides the bottom of the screen whenever the answers run past
+           it. This one-pixel element sits just below the bar's resting place:
+           while it is off screen the bar is floating over content, and flow.js
+           uses that to add the shadow that separates the two. Presentational
+           only — nothing depends on it, and the bar works without it. -->
+      <div id="flow-nav-end" aria-hidden="true"></div>
     </div>
 
     <!-- ===================================================================
@@ -124,7 +132,12 @@
           <span>Yes, SwitzerHealth may call or text me about signing up.</span>
         </label>
 
-        <button type="submit" class="btn btn--primary btn--lg btn--block">Send my details</button>
+        <!-- Five fields at this text size run well past one screen on a phone.
+             `.form-actions` keeps the submit button on the bottom edge of the
+             viewport until the reader reaches the end of the form. -->
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary btn--lg btn--block">Send my details</button>
+        </div>
       </form>
     </div>
 

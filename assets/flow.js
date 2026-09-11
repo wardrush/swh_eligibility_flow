@@ -195,7 +195,28 @@
   function focusStep() {
     var target = els.step.querySelector('[data-focus]');
     if (target) target.focus();
-    window.scrollTo(0, 0);
+    scrollFlowIntoView();
+  }
+
+  /* Where a new screen starts.
+
+     The readers this page was built for are on short screens with the browser
+     text turned up, and on those the site header alone is most of a hundred
+     pixels. Scrolling to the top of the *document* spends that on a logo and a
+     phone number before the question begins.
+
+     So: if the whole screen fits, go to the top of the page and show
+     everything. If it does not, the site header is the first thing to give up
+     — the flow starts at its own progress line instead, which keeps "Question
+     3 of 11" in view and puts the question itself near the top of the glass.
+     The header is one short scroll up whenever the reader wants it. */
+  function scrollFlowIntoView() {
+    if (!els.app) { window.scrollTo(0, 0); return; }
+
+    var rect = els.app.getBoundingClientRect();
+    var appTop = rect.top + (window.pageYOffset || document.documentElement.scrollTop || 0);
+
+    window.scrollTo(0, appTop + rect.height <= window.innerHeight ? 0 : appTop);
   }
 
   function renderChoices(q) {
@@ -581,8 +602,27 @@
     render();
   }
 
+  /* The Back/Next bar is `position: sticky`, so it rides the bottom of the
+     screen whenever the question runs longer than the viewport — which, on a
+     short screen at large text, is most of them. The sentinel sits just below
+     the bar's resting place: while it is off screen the bar is floating over
+     the answers and earns a shadow; once the reader reaches the end of the
+     page the bar comes to rest and the shadow goes away.
+
+     Purely cosmetic. Without IntersectionObserver the bar still sticks; it
+     just keeps a flat top rule the whole way down. */
+  function watchNavPin() {
+    var sentinel = document.getElementById('flow-nav-end');
+    if (!sentinel || !window.IntersectionObserver) return;
+
+    new IntersectionObserver(function (entries) {
+      els.nav.classList.toggle('flow__nav--pinned', !entries[0].isIntersecting);
+    }).observe(sentinel);
+  }
+
   /* --- Boot --------------------------------------------------------------- */
   function init() {
+    els.app = document.getElementById('flow-app');
     els.step = document.getElementById('step');
     els.error = document.getElementById('flow-error');
     els.nav = document.getElementById('flow-nav');
@@ -594,7 +634,7 @@
     if (!els.step) return;
 
     /* Reveal the scripted flow and retire the no-JS fallback form. */
-    document.getElementById('flow-app').hidden = false;
+    els.app.hidden = false;
     var fallback = document.getElementById('fallback');
     if (fallback) fallback.hidden = true;
 
@@ -614,6 +654,8 @@
         goNext();
       }
     });
+
+    watchNavPin();
 
     flushQueue();
     window.addEventListener('online', flushQueue);

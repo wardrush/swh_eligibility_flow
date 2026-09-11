@@ -143,6 +143,46 @@ Acceptance criteria, not aspirations:
 Re-test at 320px, 375px, 768px, and at **200% browser zoom**, which is how much of this
 audience actually browses.
 
+### Short viewports
+
+A second axis, and the one that bites hardest: a phone held in one hand with the browser's
+text setting turned up leaves perhaps 550–700px of glass once the browser's own chrome is
+subtracted. At the default spacing that put the first question 43% of the way down the
+screen with no answers visible and the Next button several scrolls below the fold.
+
+Three things address it, all in `app.css` under `@media (max-height: 48rem)` and in
+`focusStep()` in `flow.js`:
+
+- **The Back/Next bar is `position: sticky`**, so it rides the bottom edge of the screen
+  for as long as the question runs past it and settles into place at the end of the page.
+  The next action is never something the reader has to go looking for. `sticky`, not
+  `fixed`, on purpose — a fixed bar keeps its own coordinates when a phone keyboard opens
+  and lands on top of the field being typed into. The no-JS fallback form's submit button
+  gets the same treatment via `.form-actions`.
+- **A new screen scrolls to the flow, not to the document.** If the whole question fits,
+  the page starts at the top and the site header is on screen. If it does not, the header
+  is the first thing to give up: the flow starts at its own progress line instead, which
+  keeps "Question 3 of 11" in view and puts the question near the top of the glass. The
+  header is one short scroll up whenever the reader wants it.
+- **Chrome and whitespace shrink; type, tap targets, and contrast do not.** The progress
+  words and bar share a line, the wordmark drops to its mark (the lettering stays in the
+  accessibility tree as the link's name), and the padding comes down. The one control
+  allowed to sit at the 60px floor rather than the usual 3.6rem is the header phone link,
+  because it is chrome — nothing the reader has to fill in was touched.
+
+Measured on the first question at 375×553 with the phone base font: the question moved
+from 240px down the screen to 68px, and Next went from invisible to always on screen.
+
+`rem` in a media query resolves against the browser's *initial* font size, not the 137.5%
+set on `<html>`, so `48rem` means 768 device-independent pixels however large the reader
+has set their text. That is deliberate — it asks how tall the screen is, not how big the
+type is. The large-type case is handled separately, by `flex-wrap: wrap-reverse` on the
+button bar and by `min-width: 0` on the answer cards, which is what stops a card from
+pushing the page sideways once the browser's base font is set to 24px.
+
+**Re-test short viewports at 375×553 and 360×640**, at each of the browser's font-size
+settings, and confirm the page never scrolls horizontally.
+
 ## Conference resilience
 
 A failed submission is parked in `localStorage` and retried on the next page load and on
